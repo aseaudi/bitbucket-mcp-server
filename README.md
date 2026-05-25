@@ -1,6 +1,6 @@
 # Bitbucket MCP Server
 
-[![npm version](https://badge.fury.io/js/@nexus2520%2Fbitbucket-mcp-server.svg)](https://www.npmjs.com/package/@nexus2520/bitbucket-mcp-server)
+[![npm version](https://badge.fury.io/js/@aseaudi%2Fbitbucket-mcp-server.svg)](https://www.npmjs.com/package/@aseaudi/bitbucket-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 An MCP (Model Context Protocol) server that provides tools for interacting with the Bitbucket API, supporting both Bitbucket Cloud and Bitbucket Server.
@@ -86,7 +86,7 @@ The easiest way to use this MCP server is directly with npx:
       "command": "npx",
       "args": [
         "-y",
-        "@nexus2520/bitbucket-mcp-server"
+        "@aseaudi/bitbucket-mcp-server"
       ],
       "env": {
         "BITBUCKET_USERNAME": "your-username",
@@ -105,7 +105,7 @@ For Bitbucket Server:
       "command": "npx",
       "args": [
         "-y",
-        "@nexus2520/bitbucket-mcp-server"
+        "@aseaudi/bitbucket-mcp-server"
       ],
       "env": {
         "BITBUCKET_USERNAME": "your.email@company.com",

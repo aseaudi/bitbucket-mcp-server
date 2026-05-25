@@ -74,7 +74,7 @@ api_integration:
     search_api: "/rest/search/latest"
 
 deployment:
-  package_name: "@nexus2520/bitbucket-mcp-server"
+  package_name: "@aseaudi/bitbucket-mcp-server"
   registry: "npm public registry"
   distribution:
     - "Compiled JavaScript in build/"
@@ -82,7 +82,7 @@ deployment:
     - "Source maps excluded"
   
   execution_methods:
-    - "npx -y @nexus2520/bitbucket-mcp-server"
+    - "npx -y @aseaudi/bitbucket-mcp-server"
     - "Direct node execution after install"
     - "MCP client integration"
 

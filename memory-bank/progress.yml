@@ -65,7 +65,7 @@ testing_status:
   known_issues: []
 
 deployment_status:
-  npm_package: "Published as @nexus2520/bitbucket-mcp-server"
+  npm_package: "Published as @aseaudi/bitbucket-mcp-server"
   version_published: "1.0.0"
   documentation: "Comprehensive README with examples"
   adoption_metrics:

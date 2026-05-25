@@ -561,7 +561,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Branch deletion handling for 204 No Content responses
 
 ### Changed
-- Package name to `@nexus2520/bitbucket-mcp-server` for npm publishing
+- Package name to `@aseaudi/bitbucket-mcp-server` for npm publishing
 
 ## [0.1.0] - 2025-06-03
 
