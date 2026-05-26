@@ -33,12 +33,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pdogra1299/bitbucket-mcp-server.git"
+    "url": "git+https://github.com/aseaudi/bitbucket-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/pdogra1299/bitbucket-mcp-server/issues"
+    "url": "https://github.com/aseaudi/bitbucket-mcp-server/issues"
   },
-  "homepage": "https://github.com/pdogra1299/bitbucket-mcp-server#readme",
+  "homepage": "https://github.com/aseaudi/bitbucket-mcp-server#readme",
   "engines": {
     "node": ">=16.0.0"
   },
