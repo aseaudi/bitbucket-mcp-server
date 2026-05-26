@@ -3,6 +3,7 @@ import { BitbucketApiClient } from '../utils/api-client.js';
 import {
   isListDirectoryContentArgs,
   isGetFileContentArgs,
+  isWriteFileContentArgs,
   isSearchFilesArgs,
   isGetFileBlameArgs
 } from '../types/guards.js';
@@ -340,6 +341,98 @@ export class FileHandlers {
         };
       }
       return this.apiClient.handleApiError(error, `getting file content for '${file_path}' in ${workspace}/${repository}`);
+    }
+  }
+
+  async handleWriteFileContent(args: any) {
+    if (!isWriteFileContentArgs(args)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Invalid arguments for write_file_content'
+      );
+    }
+
+    if (this.apiClient.getIsServer()) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'write_file_content is only supported on Bitbucket Cloud. Bitbucket Server/Data Center uses a different file-edit API and is not implemented here yet.',
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const { workspace, repository, file_path, content, commit_message, branch } = args;
+
+    try {
+      const normalizedPath = `/${file_path.replace(/^\/+/, '')}`;
+      const fileName = path.basename(file_path) || 'file.txt';
+      const form = new URLSearchParams();
+
+      form.append('message', commit_message);
+      if (branch) {
+        form.append('branch', branch);
+      }
+      form.append(normalizedPath, content);
+
+      const response = await this.apiClient.makeRequest<any>(
+        'post',
+        `/repositories/${workspace}/${repository}/src`,
+        form.toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              file_path,
+              branch: branch || 'default',
+              commit_message,
+              commit: response?.commit
+                ? {
+                    hash: response.commit.hash,
+                    message: response.commit.message,
+                    date: response.commit.date,
+                    author: response.commit.author?.raw,
+                    links: response.commit.links,
+                  }
+                : null,
+              file: response?.files?.[0]
+                ? {
+                    path: response.files[0].path || file_path,
+                    type: response.files[0].type,
+                  }
+                : {
+                    path: file_path,
+                    type: 'commit_file',
+                    name: fileName,
+                  },
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      if (error.status === 404) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Repository '${workspace}/${repository}' or branch '${branch || 'default'}' was not found`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      return this.apiClient.handleApiError(error, `writing file content for '${file_path}' in ${workspace}/${repository}`);
     }
   }
 

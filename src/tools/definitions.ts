@@ -9,7 +9,7 @@ export type ToolGroup =
   | 'search'
   | 'discovery';
 
-export type ToolAvailability = 'both' | 'server_only';
+export type ToolAvailability = 'both' | 'server_only' | 'cloud_only';
 
 export interface ToolDefinition {
   name: string;
@@ -524,6 +524,24 @@ export const toolDefinitions: ToolDefinition[] = [
         full_content: { type: 'boolean', description: 'Return full content regardless of size (default: false)' },
       },
       required: ['workspace', 'repository', 'file_path'],
+    },
+  },
+  {
+    name: 'write_file_content',
+    description: 'Create or update a text file in a repository by committing new content to a branch. Bitbucket Cloud only.',
+    group: 'files',
+    availability: 'cloud_only',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: W,
+        repository: R,
+        file_path: { type: 'string', description: 'Repository file path, e.g. "src/index.ts"' },
+        content: { type: 'string', description: 'Full text content to write to the file' },
+        commit_message: { type: 'string', description: 'Commit message for the file update' },
+        branch: { type: 'string', description: 'Branch to commit to (default: repository main/default branch)' },
+      },
+      required: ['workspace', 'repository', 'file_path', 'content', 'commit_message'],
     },
   },
   {

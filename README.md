@@ -7,7 +7,7 @@ An MCP (Model Context Protocol) server that provides tools for interacting with 
 
 ## Features
 
-### Available Tools (29 total)
+### Available Tools (30 total)
 
 #### PR Core (`pr_core`)
 - `get_pull_request` - Full PR details including comments, file changes, and merge info
@@ -47,6 +47,7 @@ An MCP (Model Context Protocol) server that provides tools for interacting with 
 #### Files (`files`)
 - `list_directory_content` - List files and directories in a repository path
 - `get_file_content` - Get file content with smart truncation for large files
+- `write_file_content` - Create or update a text file by committing new content to a branch (Bitbucket Cloud only)
 - `search_files` - Search for files by glob pattern (case-insensitive, like VS Code Ctrl+P)
 - `get_file_blame` - Per-line blame: who last modified each line, commit hash, and author timestamp (Bitbucket Server only)
 
@@ -66,7 +67,7 @@ v2.0.0 introduces significant token savings on every LLM request:
 | Configuration | Tools exposed | Est. tokens |
 |---|---|---|
 | Bitbucket Server (all groups) | 29 | ~5,100 |
-| Bitbucket Cloud (auto-filtered) | 21 | ~3,900 |
+| Bitbucket Cloud (auto-filtered) | 22 | ~4,100 |
 | Custom group preset (e.g. `pr_core,pr_review,files`) | 12 | ~2,100 |
 
 **Bitbucket Cloud** automatically hides the 10 server-only tools with no configuration needed.
@@ -213,7 +214,7 @@ Reduce the number of tools sent to the LLM on every request by setting `BITBUCKE
 | `pr_tasks` | `list_pr_tasks`, `create_pr_task`, `update_pr_task`, `set_pr_task_status`, `delete_pr_task`, `convert_pr_item` | Server only |
 | `commits` | `list_pr_commits`, `list_branch_commits`, `get_commit_detail` | Both |
 | `branches` | `list_branches`, `get_branch`, `delete_branch` | Both |
-| `files` | `list_directory_content`, `get_file_content`, `search_files`, `get_file_blame` (Server only) | Both |
+| `files` | `list_directory_content`, `get_file_content`, `write_file_content` (Cloud only), `search_files`, `get_file_blame` (Server only) | Both |
 | `search` | `search_code`, `find_in_files`, `search_repositories` | Server only |
 | `discovery` | `list_projects`, `list_repositories` | Both |
 
@@ -1565,6 +1566,38 @@ Example responses:
   }
 }
 ```
+
+### Write File Content
+
+Create or update a text file and commit it directly to a Bitbucket Cloud repository branch.
+
+**Bitbucket Cloud only.** This wraps the Cloud `/src` commit endpoint and writes the full file content you provide.
+
+```typescript
+{
+  "tool": "write_file_content",
+  "arguments": {
+    "workspace": "my-workspace",
+    "repository": "my-repo",
+    "file_path": "src/config/app.env",
+    "content": "API_URL=https://example.com\nFEATURE_FLAG=true\n",
+    "commit_message": "Update app env defaults",
+    "branch": "main"  // Optional (defaults to repository default branch)
+  }
+}
+```
+
+**Parameters:**
+- `file_path`: Repository-relative file path to create or overwrite
+- `content`: Full text content to store in the file
+- `commit_message`: Commit message for the generated commit
+- `branch`: Branch to commit to (optional)
+
+Returns:
+- File path and branch
+- Commit message used
+- Commit metadata when Bitbucket returns it
+- File metadata for the written path when available
 
 ### Get File Blame
 

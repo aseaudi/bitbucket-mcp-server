@@ -281,6 +281,25 @@ export const isGetFileContentArgs = (
   (args.line_count === undefined || typeof args.line_count === 'number') &&
   (args.full_content === undefined || typeof args.full_content === 'boolean');
 
+export const isWriteFileContentArgs = (
+  args: any
+): args is {
+  workspace: string;
+  repository: string;
+  file_path: string;
+  content: string;
+  commit_message: string;
+  branch?: string;
+} =>
+  typeof args === 'object' &&
+  args !== null &&
+  typeof args.workspace === 'string' &&
+  typeof args.repository === 'string' &&
+  typeof args.file_path === 'string' &&
+  typeof args.content === 'string' &&
+  typeof args.commit_message === 'string' &&
+  (args.branch === undefined || typeof args.branch === 'string');
+
 export const isGetFileBlameArgs = (
   args: any
 ): args is {

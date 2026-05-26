@@ -95,6 +95,8 @@ class BitbucketMCPServer {
       const tools = toolDefinitions.filter(tool => {
         // Hide server-only tools when running against Bitbucket Cloud
         if (tool.availability === 'server_only' && !isServer) return false;
+        // Hide cloud-only tools when running against Bitbucket Server
+        if (tool.availability === 'cloud_only' && isServer) return false;
         // Hide tools not in the enabled groups when BITBUCKET_TOOL_GROUPS is set
         if (BITBUCKET_TOOL_GROUPS && !BITBUCKET_TOOL_GROUPS.has(tool.group)) return false;
         return true;
@@ -167,6 +169,8 @@ class BitbucketMCPServer {
           return this.fileHandlers.handleListDirectoryContent(request.params.arguments);
         case 'get_file_content':
           return this.fileHandlers.handleGetFileContent(request.params.arguments);
+        case 'write_file_content':
+          return this.fileHandlers.handleWriteFileContent(request.params.arguments);
         case 'search_files':
           return this.fileHandlers.handleSearchFiles(request.params.arguments);
         case 'get_file_blame':
