@@ -15,6 +15,8 @@ export function formatServerResponse(
   baseUrl?: string
 ): any {
   const webUrl = `${baseUrl}/projects/${pr.toRef.repository.project.key}/repos/${pr.toRef.repository.slug}/pull-requests/${pr.id}`;
+  const reviewers = pr.reviewers ?? [];
+  const participants = pr.participants ?? [];
 
   return {
     id: pr.id,
@@ -27,12 +29,12 @@ export function formatServerResponse(
     destination_branch: pr.toRef.displayId,
     source_commit: pr.fromRef.latestCommit,
     destination_commit: pr.toRef.latestCommit,
-    reviewers: pr.reviewers.map(r => ({
+    reviewers: reviewers.map(r => ({
       name: r.user.displayName,
       approved: r.approved,
       status: r.status,
     })),
-    participants: pr.participants.map(p => ({
+    participants: participants.map(p => ({
       name: p.user.displayName,
       role: p.role,
       approved: p.approved,
@@ -51,6 +53,9 @@ export function formatServerResponse(
 
 // Full detail format for get_pull_request (Cloud)
 export function formatCloudResponse(pr: BitbucketCloudPullRequest): any {
+  const reviewers = pr.reviewers ?? [];
+  const participants = pr.participants ?? [];
+
   return {
     id: pr.id,
     title: pr.title,
@@ -59,8 +64,8 @@ export function formatCloudResponse(pr: BitbucketCloudPullRequest): any {
     author: pr.author.display_name,
     source_branch: pr.source.branch.name,
     destination_branch: pr.destination.branch.name,
-    reviewers: pr.reviewers.map(r => r.display_name),
-    participants: pr.participants.map(p => ({
+    reviewers: reviewers.map(r => r.display_name),
+    participants: participants.map(p => ({
       name: p.user.display_name,
       role: p.role,
       approved: p.approved,
@@ -78,6 +83,8 @@ export function formatCloudResponse(pr: BitbucketCloudPullRequest): any {
 // Slim list format for list_pull_requests (Server)
 export function formatServerPRListItem(pr: BitbucketServerPullRequest, baseUrl?: string): any {
   const webUrl = `${baseUrl}/projects/${pr.toRef.repository.project.key}/repos/${pr.toRef.repository.slug}/pull-requests/${pr.id}`;
+  const reviewers = pr.reviewers ?? [];
+
   return {
     id: pr.id,
     title: pr.title,
@@ -88,12 +95,14 @@ export function formatServerPRListItem(pr: BitbucketServerPullRequest, baseUrl?:
     destination_branch: pr.toRef.displayId,
     updated_on: new Date(pr.updatedDate).toLocaleString(),
     web_url: webUrl,
-    reviewers: pr.reviewers.map(r => ({ name: r.user.displayName, approved: r.approved })),
+    reviewers: reviewers.map(r => ({ name: r.user.displayName, approved: r.approved })),
   };
 }
 
 // Slim list format for list_pull_requests (Cloud)
 export function formatCloudPRListItem(pr: BitbucketCloudPullRequest): any {
+  const reviewers = pr.reviewers ?? [];
+
   return {
     id: pr.id,
     title: pr.title,
@@ -103,7 +112,7 @@ export function formatCloudPRListItem(pr: BitbucketCloudPullRequest): any {
     destination_branch: pr.destination.branch.name,
     updated_on: new Date(pr.updated_on).toLocaleString(),
     web_url: pr.links.html.href,
-    reviewers: pr.reviewers.map(r => r.display_name),
+    reviewers: reviewers.map(r => r.display_name),
   };
 }
 

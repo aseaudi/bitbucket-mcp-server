@@ -1,6 +1,6 @@
 {
   "name": "@aseaudi/bitbucket-mcp-server",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "MCP server for Bitbucket API integration - supports both Cloud and Server",
   "type": "module",
   "main": "./build/index.js",

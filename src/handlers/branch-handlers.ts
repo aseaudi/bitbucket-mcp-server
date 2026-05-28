@@ -352,20 +352,24 @@ export class BranchHandlers {
           }
         });
 
-        openPRs = (prResponse.values || []).map((pr: any) => ({
-          id: pr.id,
-          title: pr.title,
-          destination_branch: pr.toRef.displayId,
-          author: pr.author.user.displayName,
-          created_on: new Date(pr.createdDate).toISOString(),
-          reviewers: pr.reviewers.map((r: any) => r.user.displayName),
-          approval_status: {
-            approved_by: pr.reviewers.filter((r: any) => r.approved).map((r: any) => r.user.displayName),
-            changes_requested_by: pr.reviewers.filter((r: any) => r.status === 'NEEDS_WORK').map((r: any) => r.user.displayName),
-            pending: pr.reviewers.filter((r: any) => !r.approved && r.status !== 'NEEDS_WORK').map((r: any) => r.user.displayName)
-          },
-          url: `${this.baseUrl}/projects/${workspace}/repos/${repository}/pull-requests/${pr.id}`
-        }));
+        openPRs = (prResponse.values || []).map((pr: any) => {
+          const reviewers = Array.isArray(pr.reviewers) ? pr.reviewers : [];
+
+          return {
+            id: pr.id,
+            title: pr.title,
+            destination_branch: pr.toRef.displayId,
+            author: pr.author.user.displayName,
+            created_on: new Date(pr.createdDate).toISOString(),
+            reviewers: reviewers.map((r: any) => r.user.displayName),
+            approval_status: {
+              approved_by: reviewers.filter((r: any) => r.approved).map((r: any) => r.user.displayName),
+              changes_requested_by: reviewers.filter((r: any) => r.status === 'NEEDS_WORK').map((r: any) => r.user.displayName),
+              pending: reviewers.filter((r: any) => !r.approved && r.status !== 'NEEDS_WORK').map((r: any) => r.user.displayName)
+            },
+            url: `${this.baseUrl}/projects/${workspace}/repos/${repository}/pull-requests/${pr.id}`
+          };
+        });
       } else {
         // Bitbucket Cloud
         const prPath = `/repositories/${workspace}/${repository}/pullrequests`;
@@ -377,21 +381,27 @@ export class BranchHandlers {
           }
         });
 
-        openPRs = (prResponse.values || []).map((pr: any) => ({
-          id: pr.id,
-          title: pr.title,
-          destination_branch: pr.destination.branch.name,
-          author: pr.author.display_name,
-          created_on: pr.created_on,
-          reviewers: pr.reviewers.map((r: any) => r.display_name),
-          approval_status: {
-            approved_by: pr.participants.filter((p: any) => p.approved).map((p: any) => p.user.display_name),
-            changes_requested_by: [], // Cloud doesn't have explicit "changes requested" status
-            pending: pr.reviewers.filter((r: any) => !pr.participants.find((p: any) => p.user.account_id === r.account_id && p.approved))
-              .map((r: any) => r.display_name)
-          },
-          url: pr.links.html.href
-        }));
+        openPRs = (prResponse.values || []).map((pr: any) => {
+          const reviewers = Array.isArray(pr.reviewers) ? pr.reviewers : [];
+          const participants = Array.isArray(pr.participants) ? pr.participants : [];
+
+          return {
+            id: pr.id,
+            title: pr.title,
+            destination_branch: pr.destination.branch.name,
+            author: pr.author.display_name,
+            created_on: pr.created_on,
+            reviewers: reviewers.map((r: any) => r.display_name),
+            approval_status: {
+              approved_by: participants.filter((p: any) => p.approved).map((p: any) => p.user.display_name),
+              changes_requested_by: [], // Cloud doesn't have explicit "changes requested" status
+              pending: reviewers
+                .filter((r: any) => !participants.find((p: any) => p.user.account_id === r.account_id && p.approved))
+                .map((r: any) => r.display_name)
+            },
+            url: pr.links.html.href
+          };
+        });
       }
 
       // Step 3: Optionally get merged PRs
@@ -410,12 +420,16 @@ export class BranchHandlers {
             }
           });
 
-          mergedPRs = (mergedPrResponse.values || []).map((pr: any) => ({
-            id: pr.id,
-            title: pr.title,
-            merged_at: new Date(pr.updatedDate).toISOString(), // Using updated date as merge date
-            merged_by: pr.participants.find((p: any) => p.role === 'PARTICIPANT' && p.approved)?.user.displayName || 'Unknown'
-          }));
+          mergedPRs = (mergedPrResponse.values || []).map((pr: any) => {
+            const participants = Array.isArray(pr.participants) ? pr.participants : [];
+
+            return {
+              id: pr.id,
+              title: pr.title,
+              merged_at: new Date(pr.updatedDate).toISOString(), // Using updated date as merge date
+              merged_by: participants.find((p: any) => p.role === 'PARTICIPANT' && p.approved)?.user.displayName || 'Unknown'
+            };
+          });
         } else {
           // Bitbucket Cloud
           const mergedPrPath = `/repositories/${workspace}/${repository}/pullrequests`;
