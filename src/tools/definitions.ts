@@ -441,6 +441,22 @@ export const toolDefinitions: ToolDefinition[] = [
 
   // ── BRANCHES ──────────────────────────────────────────────────────────────
   {
+    name: 'create_branch',
+    description: 'Create a branch from another branch or commit. Defaults to the repository default branch when from_ref is omitted.',
+    group: 'branches',
+    availability: 'both',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: W,
+        repository: R,
+        branch_name: { type: 'string', description: 'New branch name to create' },
+        from_ref: { type: 'string', description: 'Source branch name, full ref, or commit hash to branch from (default: repository default branch)' },
+      },
+      required: ['workspace', 'repository', 'branch_name'],
+    },
+  },
+  {
     name: 'list_branches',
     description: 'List branches in a repository',
     group: 'branches',

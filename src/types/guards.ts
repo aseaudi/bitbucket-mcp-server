@@ -145,6 +145,21 @@ export const isDeleteBranchArgs = (
   typeof args.branch_name === 'string' &&
   (args.force === undefined || typeof args.force === 'boolean');
 
+export const isCreateBranchArgs = (
+  args: any
+): args is {
+  workspace: string;
+  repository: string;
+  branch_name: string;
+  from_ref?: string;
+} =>
+  typeof args === 'object' &&
+  args !== null &&
+  typeof args.workspace === 'string' &&
+  typeof args.repository === 'string' &&
+  typeof args.branch_name === 'string' &&
+  (args.from_ref === undefined || typeof args.from_ref === 'string');
+
 export const isListBranchesArgs = (
   args: any
 ): args is {

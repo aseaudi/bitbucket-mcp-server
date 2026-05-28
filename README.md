@@ -40,6 +40,7 @@ An MCP (Model Context Protocol) server that provides tools for interacting with 
 - `get_commit_detail` - Get the structured diff for a specific commit by SHA
 
 #### Branches (`branches`)
+- `create_branch` - Create a branch from another branch, ref, or commit
 - `list_branches` - List branches with filtering and pagination
 - `get_branch` - Detailed branch info including associated PRs and stats
 - `delete_branch` - Delete a branch
@@ -66,8 +67,8 @@ v2.0.0 introduces significant token savings on every LLM request:
 
 | Configuration | Tools exposed | Est. tokens |
 |---|---|---|
-| Bitbucket Server (all groups) | 29 | ~5,100 |
-| Bitbucket Cloud (auto-filtered) | 22 | ~4,100 |
+| Bitbucket Server (all groups) | 30 | ~5,200 |
+| Bitbucket Cloud (auto-filtered) | 23 | ~4,200 |
 | Custom group preset (e.g. `pr_core,pr_review,files`) | 12 | ~2,100 |
 
 **Bitbucket Cloud** automatically hides the 10 server-only tools with no configuration needed.
@@ -213,7 +214,7 @@ Reduce the number of tools sent to the LLM on every request by setting `BITBUCKE
 | `pr_review` | `get_pull_request_diff`, `set_pr_approval`, `set_review_status` | Both |
 | `pr_tasks` | `list_pr_tasks`, `create_pr_task`, `update_pr_task`, `set_pr_task_status`, `delete_pr_task`, `convert_pr_item` | Server only |
 | `commits` | `list_pr_commits`, `list_branch_commits`, `get_commit_detail` | Both |
-| `branches` | `list_branches`, `get_branch`, `delete_branch` | Both |
+| `branches` | `create_branch`, `list_branches`, `get_branch`, `delete_branch` | Both |
 | `files` | `list_directory_content`, `get_file_content`, `write_file_content` (Cloud only), `search_files`, `get_file_blame` (Server only) | Both |
 | `search` | `search_code`, `find_in_files`, `search_repositories` | Server only |
 | `discovery` | `list_projects`, `list_repositories` | Both |
@@ -777,6 +778,25 @@ The `add_comment` tool supports multiple scenarios. Here's when and how to use e
   }
 }
 ```
+
+### Create Branch
+
+```typescript
+{
+  "tool": "create_branch",
+  "arguments": {
+    "workspace": "PROJ",
+    "repository": "my-repo",
+    "branch_name": "feature/new-feature",
+    "from_ref": "main"  // Optional: branch name, full ref, or commit hash. Defaults to the repository default branch.
+  }
+}
+```
+
+Creates a branch and returns:
+- Created branch details
+- The resolved source ref and commit used as the branch starting point
+- Whether the repository default branch was used automatically
 
 ### List Branches
 

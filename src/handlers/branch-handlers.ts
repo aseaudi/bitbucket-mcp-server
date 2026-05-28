@@ -2,6 +2,7 @@ import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { BitbucketApiClient } from '../utils/api-client.js';
 import {
   isListBranchesArgs,
+  isCreateBranchArgs,
   isDeleteBranchArgs,
   isGetBranchArgs,
   isListBranchCommitsArgs,
@@ -23,6 +24,77 @@ export class BranchHandlers {
     private apiClient: BitbucketApiClient,
     private baseUrl: string
   ) {}
+
+  async handleCreateBranch(args: any) {
+    if (!isCreateBranchArgs(args)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Invalid arguments for create_branch'
+      );
+    }
+
+    const { workspace, repository, branch_name, from_ref } = args;
+
+    try {
+      if (this.apiClient.getIsServer()) {
+        const source = await this.resolveServerBranchStartPoint(workspace, repository, from_ref);
+        const apiPath = `/rest/branch-utils/latest/projects/${workspace}/repos/${repository}/branches`;
+        const branch = await this.apiClient.makeRequest<any>('post', apiPath, {
+          name: branch_name,
+          startPoint: source.startPoint
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                message: `Branch '${branch_name}' created successfully`,
+                branch: {
+                  name: branch.displayId || branch_name,
+                  id: branch.id || `refs/heads/${branch_name}`,
+                  latest_commit: branch.latestCommit || source.source_commit,
+                  is_default: branch.isDefault || false
+                },
+                source,
+                repository: `${workspace}/${repository}`
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      const source = await this.resolveCloudBranchStartPoint(workspace, repository, from_ref);
+      const apiPath = `/repositories/${workspace}/${repository}/refs/branches`;
+      const branch = await this.apiClient.makeRequest<any>('post', apiPath, {
+        name: branch_name,
+        target: {
+          hash: source.startPoint
+        }
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              message: `Branch '${branch_name}' created successfully`,
+              branch: {
+                name: branch.name || branch_name,
+                id: `refs/heads/${branch.name || branch_name}`,
+                latest_commit: branch.target?.hash || source.source_commit,
+                is_default: false
+              },
+              source,
+              repository: `${workspace}/${repository}`
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      return this.apiClient.handleApiError(error, `creating branch '${branch_name}' in ${workspace}/${repository}`);
+    }
+  }
 
   async handleListBranches(args: any) {
     if (!isListBranchesArgs(args)) {
@@ -819,5 +891,117 @@ export class BranchHandlers {
     }
 
     return result;
+  }
+
+  private async resolveServerBranchStartPoint(workspace: string, repository: string, fromRef?: string) {
+    if (!fromRef) {
+      const defaultBranchPath = `/rest/api/latest/projects/${workspace}/repos/${repository}/branches/default`;
+      const defaultBranch = await this.apiClient.makeRequest<any>('get', defaultBranchPath);
+
+      return {
+        requested_ref: null,
+        resolved_ref: defaultBranch.displayId || defaultBranch.id,
+        source_commit: defaultBranch.latestCommit || null,
+        used_default_branch: true,
+        startPoint: defaultBranch.id || defaultBranch.displayId
+      };
+    }
+
+    const normalizedRef = this.normalizeBranchRefName(fromRef);
+    const branch = await this.findServerBranchByName(workspace, repository, normalizedRef);
+    if (branch) {
+      return {
+        requested_ref: fromRef,
+        resolved_ref: branch.displayId,
+        source_commit: branch.latestCommit,
+        used_default_branch: false,
+        startPoint: branch.id
+      };
+    }
+
+    return {
+      requested_ref: fromRef,
+      resolved_ref: null,
+      source_commit: this.looksLikeCommitHash(fromRef) ? fromRef : null,
+      used_default_branch: false,
+      startPoint: fromRef
+    };
+  }
+
+  private async resolveCloudBranchStartPoint(workspace: string, repository: string, fromRef?: string) {
+    if (!fromRef) {
+      const repoPath = `/repositories/${workspace}/${repository}`;
+      const repoInfo = await this.apiClient.makeRequest<any>('get', repoPath);
+      const defaultBranchName = repoInfo.mainbranch?.name;
+
+      if (!defaultBranchName) {
+        throw new Error(`Repository '${workspace}/${repository}' does not have a default branch configured`);
+      }
+
+      const defaultBranchPath = `/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(defaultBranchName)}`;
+      const defaultBranch = await this.apiClient.makeRequest<any>('get', defaultBranchPath);
+
+      return {
+        requested_ref: null,
+        resolved_ref: defaultBranch.name,
+        source_commit: defaultBranch.target?.hash || null,
+        used_default_branch: true,
+        startPoint: defaultBranch.target?.hash
+      };
+    }
+
+    const normalizedRef = this.normalizeBranchRefName(fromRef);
+    const branch = await this.findCloudBranchByName(workspace, repository, normalizedRef);
+    if (branch) {
+      return {
+        requested_ref: fromRef,
+        resolved_ref: branch.name,
+        source_commit: branch.target?.hash || null,
+        used_default_branch: false,
+        startPoint: branch.target?.hash
+      };
+    }
+
+    return {
+      requested_ref: fromRef,
+      resolved_ref: null,
+      source_commit: this.looksLikeCommitHash(fromRef) ? fromRef : null,
+      used_default_branch: false,
+      startPoint: fromRef
+    };
+  }
+
+  private async findServerBranchByName(workspace: string, repository: string, branchName: string) {
+    const branchesPath = `/rest/api/latest/projects/${workspace}/repos/${repository}/branches`;
+    const response = await this.apiClient.makeRequest<any>('get', branchesPath, undefined, {
+      params: {
+        filterText: branchName,
+        limit: 100,
+        details: true
+      }
+    });
+
+    return response.values?.find((branch: BitbucketServerBranch) => branch.displayId === branchName) || null;
+  }
+
+  private async findCloudBranchByName(workspace: string, repository: string, branchName: string) {
+    try {
+      const branchPath = `/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branchName)}`;
+      return await this.apiClient.makeRequest<BitbucketCloudBranch>('get', branchPath);
+    } catch (error: any) {
+      if (error?.isAxiosError && error?.status === 404) {
+        return null;
+      }
+
+      throw error;
+    }
+  }
+
+  private looksLikeCommitHash(ref: string) {
+    return /^[0-9a-f]{7,40}$/i.test(ref);
+  }
+
+  private normalizeBranchRefName(ref: string) {
+    return ref.startsWith('refs/heads/') ? ref.slice('refs/heads/'.length) : ref;
   }
 }
