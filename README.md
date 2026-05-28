@@ -1589,7 +1589,7 @@ Example responses:
 
 ### Write File Content
 
-Create or update a text file and commit it directly to a Bitbucket Cloud repository branch.
+Create or update one or more text files and commit them directly to a Bitbucket Cloud repository branch.
 
 **Bitbucket Cloud only.** This wraps the Cloud `/src` commit endpoint and writes the full file content you provide.
 
@@ -1599,8 +1599,16 @@ Create or update a text file and commit it directly to a Bitbucket Cloud reposit
   "arguments": {
     "workspace": "my-workspace",
     "repository": "my-repo",
-    "file_path": "src/config/app.env",
-    "content": "API_URL=https://example.com\nFEATURE_FLAG=true\n",
+    "files": [
+      {
+        "file_path": "src/config/app.env",
+        "content": "API_URL=https://example.com\nFEATURE_FLAG=true\n"
+      },
+      {
+        "file_path": "src/config/feature-flags.env",
+        "content": "NEW_CHECKOUT=true\n"
+      }
+    ],
     "commit_message": "Update app env defaults",
     "branch": "main"  // Optional (defaults to repository default branch)
   }
@@ -1608,16 +1616,18 @@ Create or update a text file and commit it directly to a Bitbucket Cloud reposit
 ```
 
 **Parameters:**
-- `file_path`: Repository-relative file path to create or overwrite
-- `content`: Full text content to store in the file
+- `files`: Array of files to create or overwrite in a single commit
+- `file_path`: Repository-relative file path for legacy single-file writes
+- `content`: Full text content for legacy single-file writes
 - `commit_message`: Commit message for the generated commit
 - `branch`: Branch to commit to (optional)
 
 Returns:
-- File path and branch
+- Branch and commit metadata
 - Commit message used
-- Commit metadata when Bitbucket returns it
-- File metadata for the written path when available
+- File metadata for the written paths when available
+
+For backward compatibility, single-file requests using `file_path` and `content` are still accepted.
 
 ### Get File Blame
 

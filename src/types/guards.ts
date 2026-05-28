@@ -301,19 +301,34 @@ export const isWriteFileContentArgs = (
 ): args is {
   workspace: string;
   repository: string;
-  file_path: string;
-  content: string;
   commit_message: string;
   branch?: string;
+  file_path?: string;
+  content?: string;
+  files?: Array<{
+    file_path: string;
+    content: string;
+  }>;
 } =>
   typeof args === 'object' &&
   args !== null &&
   typeof args.workspace === 'string' &&
   typeof args.repository === 'string' &&
-  typeof args.file_path === 'string' &&
-  typeof args.content === 'string' &&
   typeof args.commit_message === 'string' &&
-  (args.branch === undefined || typeof args.branch === 'string');
+  (args.branch === undefined || typeof args.branch === 'string') &&
+  (
+    (typeof args.file_path === 'string' && typeof args.content === 'string') ||
+    (
+      Array.isArray(args.files) &&
+      args.files.length > 0 &&
+      args.files.every((file: any) =>
+        typeof file === 'object' &&
+        file !== null &&
+        typeof file.file_path === 'string' &&
+        typeof file.content === 'string'
+      )
+    )
+  );
 
 export const isGetFileBlameArgs = (
   args: any

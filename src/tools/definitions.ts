@@ -544,7 +544,7 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'write_file_content',
-    description: 'Create or update a text file in a repository by committing new content to a branch. Bitbucket Cloud only.',
+    description: 'Create or update one or more text files in a repository by committing new content to a branch. Bitbucket Cloud only.',
     group: 'files',
     availability: 'cloud_only',
     inputSchema: {
@@ -552,12 +552,24 @@ export const toolDefinitions: ToolDefinition[] = [
       properties: {
         workspace: W,
         repository: R,
-        file_path: { type: 'string', description: 'Repository file path, e.g. "src/index.ts"' },
-        content: { type: 'string', description: 'Full text content to write to the file' },
+        file_path: { type: 'string', description: 'Repository file path for single-file writes, e.g. "src/index.ts"' },
+        content: { type: 'string', description: 'Full text content to write for single-file writes' },
+        files: {
+          type: 'array',
+          description: 'Files to write in a single commit. Use this for multi-file writes.',
+          items: {
+            type: 'object',
+            properties: {
+              file_path: { type: 'string', description: 'Repository file path, e.g. "src/index.ts"' },
+              content: { type: 'string', description: 'Full text content to write to the file' },
+            },
+            required: ['file_path', 'content'],
+          },
+        },
         commit_message: { type: 'string', description: 'Commit message for the file update' },
         branch: { type: 'string', description: 'Branch to commit to (default: repository main/default branch)' },
       },
-      required: ['workspace', 'repository', 'file_path', 'content', 'commit_message'],
+      required: ['workspace', 'repository', 'commit_message'],
     },
   },
   {

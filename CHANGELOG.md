@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`write_file_content` tool** — Create or update a text file and commit it through Bitbucket Cloud's `/src` endpoint with `file_path`, `content`, `commit_message`, and optional `branch`. Hidden automatically on Bitbucket Server/Data Center.
 
+### Changed
+
+- **`write_file_content` now supports multi-file commits** — pass a `files` array of `{ file_path, content }` objects to write multiple repository files in one Bitbucket Cloud `/src` commit. Legacy single-file requests with `file_path` and `content` are still accepted.
+
 ## [2.1.0] - 2026-05-10
 
 ### Added

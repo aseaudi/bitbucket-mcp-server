@@ -364,18 +364,22 @@ export class FileHandlers {
       };
     }
 
-    const { workspace, repository, file_path, content, commit_message, branch } = args;
+    const { workspace, repository, file_path, content, files, commit_message, branch } = args;
 
     try {
-      const normalizedPath = `/${file_path.replace(/^\/+/, '')}`;
-      const fileName = path.basename(file_path) || 'file.txt';
+      const filesToWrite: Array<{ file_path: string; content: string }> = Array.isArray(files) && files.length > 0
+        ? files
+        : [{ file_path: file_path!, content: content! }];
       const form = new URLSearchParams();
 
       form.append('message', commit_message);
       if (branch) {
         form.append('branch', branch);
       }
-      form.append(normalizedPath, content);
+      for (const file of filesToWrite) {
+        const normalizedPath = `/${file.file_path.replace(/^\/+/, '')}`;
+        form.append(normalizedPath, file.content);
+      }
 
       const response = await this.apiClient.makeRequest<any>(
         'post',
@@ -392,30 +396,40 @@ export class FileHandlers {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              file_path,
-              branch: branch || 'default',
-              commit_message,
-              commit: response?.commit
-                ? {
-                    hash: response.commit.hash,
-                    message: response.commit.message,
-                    date: response.commit.date,
-                    author: response.commit.author?.raw,
-                    links: response.commit.links,
-                  }
-                : null,
-              file: response?.files?.[0]
-                ? {
-                    path: response.files[0].path || file_path,
-                    type: response.files[0].type,
-                  }
-                : {
-                    path: file_path,
+            text: JSON.stringify((() => {
+              const responseFiles = Array.isArray(response?.files) && response.files.length > 0
+                ? response.files.map((responseFile: any, index: number) => ({
+                    path: responseFile.path || filesToWrite[index]?.file_path,
+                    type: responseFile.type,
+                  }))
+                : filesToWrite.map((file: { file_path: string; content: string }) => ({
+                    path: file.file_path,
                     type: 'commit_file',
-                    name: fileName,
-                  },
-            }, null, 2),
+                    name: path.basename(file.file_path) || 'file.txt',
+                  }));
+
+              const result: Record<string, any> = {
+                branch: branch || 'default',
+                commit_message,
+                commit: response?.commit
+                  ? {
+                      hash: response.commit.hash,
+                      message: response.commit.message,
+                      date: response.commit.date,
+                      author: response.commit.author?.raw,
+                      links: response.commit.links,
+                    }
+                  : null,
+                files: responseFiles,
+              };
+
+              if (filesToWrite.length === 1) {
+                result.file_path = filesToWrite[0].file_path;
+                result.file = responseFiles[0];
+              }
+
+              return result;
+            })(), null, 2),
           },
         ],
       };
@@ -432,7 +446,10 @@ export class FileHandlers {
         };
       }
 
-      return this.apiClient.handleApiError(error, `writing file content for '${file_path}' in ${workspace}/${repository}`);
+      return this.apiClient.handleApiError(
+        error,
+        `writing file content in ${workspace}/${repository}`
+      );
     }
   }
 
